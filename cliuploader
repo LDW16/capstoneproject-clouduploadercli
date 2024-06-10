@@ -1,0 +1,216 @@
+#!/bin/bash
+
+# Function to display usage
+usage() {
+    echo "Usage: $0 <file_path_or_directory1> [file_path_or_directory2 ...] [--storage storage_class] [--options additional_options] [--share] [--encrypt]"
+    echo "Example: $0 myfile1.txt mydir --storage STANDARD --share --encrypt"
+    exit 1
+}
+
+# Function to install Google Cloud SDK
+install_gcloud_sdk() {
+    sudo apt-get update
+    sudo apt-get install apt-transport-https ca-certificates gnupg -y
+    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+    sudo apt-get update && sudo apt-get install google-cloud-sdk -y
+}
+
+# Function to authenticate and set the project
+authenticate_gcloud() {
+    gcloud init
+    gcloud auth login
+    gcloud config set project inbound-object-382919
+}
+
+# Function to generate a shareable link
+generate_shareable_link() {
+    local file_path=$1
+    local bucket_name=$2
+    local file_name=$(basename "$file_path")
+    local url="https://storage.googleapis.com/$bucket_name/$file_name"
+    echo "Shareable link: $url"
+}
+
+# Function to handle file synchronization
+sync_file() {
+    local file_path=$1
+    local bucket_name=$2
+    local file_name=$(basename "$file_path")
+    
+    if gsutil ls "gs://$bucket_name/$file_name" > /dev/null 2>&1; then
+        echo "File $file_name already exists in the bucket."
+        read -p "Choose an action: (o)verwrite, (s)kip, (r)ename: " action
+        case $action in
+            o|O)
+                ;;
+            s|S)
+                echo "Skipping $file_name."
+                return 1
+                ;;
+            r|R)
+                read -p "Enter new file name: " new_name
+                file_name=$new_name
+                ;;
+            *)
+                echo "Invalid option. Skipping $file_name."
+                return 1
+                ;;
+        esac
+    fi
+    echo "gs://$bucket_name/$file_name"
+}
+
+# Function to encrypt file
+encrypt_file() {
+    local file_path=$1
+    local base_file_name=$(basename "$file_path")
+    
+    # Check if the file is already encrypted
+    if [[ $base_file_name == *.enc ]]; then
+        echo "$file_path"  # If already encrypted, return the original file path
+    else
+        local encrypted_file="${file_path}.enc"
+        openssl aes-256-cbc -salt -in "$file_path" -out "$encrypted_file" -pbkdf2 -k secret_password
+        echo "$encrypted_file"
+    fi
+}
+
+# Check if at least one file or directory is provided
+if [ $# -lt 1 ]; then
+    usage
+fi
+
+# Default values
+BUCKET_NAME=""
+STORAGE_CLASS=""
+ADDITIONAL_OPTIONS=""
+SHARE_LINK=false
+ENCRYPT_FILES=false
+
+# Parse arguments
+FILES=()
+while [ $# -gt 0 ]; do
+    case $1 in
+        --storage)
+            STORAGE_CLASS=$2
+            shift 2
+            ;;
+        --options)
+            ADDITIONAL_OPTIONS=$2
+            shift 2
+            ;;
+        --share)
+            SHARE_LINK=true
+            shift
+            ;;
+        --encrypt)
+            ENCRYPT_FILES=true
+            shift
+            ;;
+        *)
+            FILES+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Function to prompt for or create destination directory
+prompt_destination_dir() {
+    read -p "Enter or create the destination directory (leave empty for root): " DEST_DIR
+    if [ -n "$DEST_DIR" ]; then
+        if ! gsutil ls "gs://$BUCKET_NAME/$DEST_DIR" > /dev/null 2>&1; then
+            gsutil mkdir "gs://$BUCKET_NAME/$DEST_DIR"
+            if [ $? -ne 0 ]; then
+                echo "Error creating destination directory '$DEST_DIR'."
+                prompt_destination_dir
+            fi
+        fi
+        DEST_DIR="${DEST_DIR%/}/" # Ensure directory ends with '/'
+    fi
+}
+
+# Function to prompt for bucket name and create bucket if not exists
+create_or_confirm_bucket() {
+    read -p "Enter the bucket name: " BUCKET_NAME
+    if gsutil ls -b "gs://$BUCKET_NAME" > /dev/null 2>&1; then
+        read -p "Bucket '$BUCKET_NAME' already exists. Use it as the upload destination? (y/n): " confirm
+        if [[ $confirm =~ ^[Yy]$ ]]; then
+            return
+        else
+            create_or_confirm_bucket
+        fi
+    else
+        gsutil mb -p inbound-object-382919 "gs://$BUCKET_NAME"
+        if [ $? -ne 0 ]; then
+            echo "Error creating bucket '$BUCKET_NAME'. Please try again."
+            create_or_confirm_bucket
+        fi
+    fi
+}
+
+# Prompt for bucket name and create or confirm bucket
+create_or_confirm_bucket
+
+# Prompt for or create destination directory
+prompt_destination_dir
+
+# Check if gcloud is installed, if not, install it
+if ! command -v gcloud &> /dev/null; then
+    install_gcloud_sdk
+fi
+
+# Authenticate with Google Cloud
+authenticate_gcloud
+
+# Function to upload a file
+upload_file() {
+    local file_path=$1
+
+    # Encrypt file if required
+    if $ENCRYPT_FILES; then
+        file_path=$(encrypt_file "$file_path")
+    fi
+
+    # Handle file synchronization
+    TARGET_PATH=$(sync_file "$file_path" "$BUCKET_NAME")
+    if [ $? -ne 0 ]; then
+        return
+    fi
+
+    # Construct the destination path
+    DESTINATION="gs://$BUCKET_NAME/$DEST_DIR"
+
+    # Execute the gsutil cp command with progress bar
+    echo "Uploading $file_path to $DESTINATION ..."
+    gsutil cp "$file_path" "$DESTINATION"
+    if [ $? -eq 0 ]; then
+        echo "Successfully uploaded $file_path to $DESTINATION"
+        if $SHARE_LINK; then
+            generate_shareable_link "$file_path" "$BUCKET_NAME"
+        fi
+    else
+        echo "Error uploading $file_path"
+    fi
+}
+
+# Export functions to be accessible by subshells
+export -f upload_file
+export -f sync_file
+export -f encrypt_file
+export -f generate_shareable_link
+export BUCKET_NAME
+export DEST_DIR
+export ENCRYPT_FILES
+export SHARE_LINK
+
+# Loop through each file or directory and process
+for ITEM in "${FILES[@]}"; do
+    if [ -f "$ITEM" ]; then
+        upload_file "$ITEM"
+    elif [ -d "$ITEM" ]; then
+        find "$ITEM" -type f -exec bash -c 'upload_file "$0"' {} \;
+    else
+        echo "Error: '$ITEM' is not a valid file or directory."
+    fi
+done
