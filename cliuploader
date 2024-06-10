@@ -214,3 +214,4 @@ for ITEM in "${FILES[@]}"; do
         echo "Error: '$ITEM' is not a valid file or directory."
     fi
 done
+
