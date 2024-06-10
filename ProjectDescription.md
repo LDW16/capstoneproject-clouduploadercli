@@ -22,6 +22,3 @@ Project
 Build the capstone from LTC on the VM -- https://learntocloud.guide/phase1/?ref=madebygps.com#capstone-project-clouduploader-cli.
 Create a GitHub repo and make sure your script is there.
 Make sure your repo README.md is well documented.
-
-
-
