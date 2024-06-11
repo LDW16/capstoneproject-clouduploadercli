@@ -34,11 +34,11 @@ gcloud config set project YOUR_PROJECT_ID
 ## Usage
 The tool can be used to upload files or directories to Google Cloud Storage, with optional encryption and shareable link generation.
 
-Basic Command
+### Basic Command
 
 ./cliuploader path/to/... --storage STANDARD --share --encrypt
 
-Options
+### Options
 
 --storage [STORAGE_CLASS]: Sets the storage class (e.g., STANDARD, NEARLINE, COLDLINE, ARCHIVE).
 
