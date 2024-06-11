@@ -5,7 +5,9 @@ The CLI Uploader Tool is a command-line utility for encrypting files and uploadi
 
 ## Prerequisites
 Python 3.x
+
 Google Cloud SDK
+
 OpenSSL
 
 ## Installation
