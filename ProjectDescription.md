@@ -11,7 +11,7 @@ How you will interact with servers.
 
 In your cloud account, deploy the cheapest Ubuntu VM possible. Use this for your studies. Turn it off after you’re done but also configure it to turn off at a the end of the day in case you forget.
 
-Here is a free 2-hour course covering the basics of Bash.
+Here is a free 2-hour course covering the basics of Bash. -- https://www.youtube.com/playlist?list=PLlrxD0HtieHh9ZhrnEbZKhzk0cetzuX7l
 
 2 weeks
 
