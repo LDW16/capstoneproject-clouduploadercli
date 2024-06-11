@@ -13,7 +13,7 @@ OpenSSL
 ## Installation
 Python: Ensure Python 3.x is installed on your system. You can download it from python.org.
 
-Google Cloud SDK: Follow the instructions here to install the Google Cloud SDK.
+Google Cloud SDK: Follow the instructions to install the Google Cloud SDK. -- https://cloud.google.com/sdk/docs/install
 
 OpenSSL: OpenSSL should be pre-installed on most systems. Verify by running openssl version in your terminal.
 
