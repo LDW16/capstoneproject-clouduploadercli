@@ -12,12 +12,15 @@ OpenSSL
 
 ## Installation
 Python: Ensure Python 3.x is installed on your system. You can download it from python.org.
+
 Google Cloud SDK: Follow the instructions here to install the Google Cloud SDK.
+
 OpenSSL: OpenSSL should be pre-installed on most systems. Verify by running openssl version in your terminal.
 
 ## Setup
 Clone the repository:
 git clone https://github.com/yourusername/cliuploader.git
+
 cd cliuploader
 
 Install dependencies:
@@ -25,40 +28,55 @@ pip install -r requirements.txt
 
 Authenticate with Google Cloud:
 gcloud auth login
+
 gcloud config set project YOUR_PROJECT_ID
 
 ## Usage
 The tool can be used to upload files or directories to Google Cloud Storage, with optional encryption and shareable link generation.
 
 Basic Command
+
 ./cliuploader path/to/... --storage STANDARD --share --encrypt
 
 Options
+
 --storage [STORAGE_CLASS]: Sets the storage class (e.g., STANDARD, NEARLINE, COLDLINE, ARCHIVE).
+
 --share: Generates a shareable link for each uploaded file.
+
 --encrypt: Encrypts the file before uploading using OpenSSL.
 
 ## Troubleshooting
-Common Issues
+### Common Issues
 
-Google Cloud SDK Not Installed:
+#### Google Cloud SDK Not Installed:
+
 Error: gcloud: command not found
+
 Solution: Ensure Google Cloud SDK is installed and added to your PATH.
 
-Authentication Error:
+#### Authentication Error:
+
 Error: You are not logged in. Please run: $ gcloud auth login
+
 Solution: Authenticate with Google Cloud by running gcloud auth login.
 
-File Not Found:
+#### File Not Found:
+
 Error: No such file or directory
+
 Solution: Verify the file path is correct and the file exists.
 
-Encryption Issues:
+#### Encryption Issues:
+
 Error: OpenSSL command not found
+
 Solution: Ensure OpenSSL is installed and available in your PATH. Verify by running openssl version.
 
-Invalid Command Line Arguments:
+#### Invalid Command Line Arguments:
+
 Error: –share is not a valid file or directory
+
 Solution: Ensure you are using double hyphens (--) for options, e.g., --share.
 
 ## Logs and Feedback
