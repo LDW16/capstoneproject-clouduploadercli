@@ -19,7 +19,7 @@ OpenSSL: OpenSSL should be pre-installed on most systems. Verify by running open
 
 ## Setup
 Clone the repository:
-git clone https://github.com/yourusername/cliuploader.git
+git clone https://github.com/lwil16/cliuploader.git
 
 cd cliuploader
 
